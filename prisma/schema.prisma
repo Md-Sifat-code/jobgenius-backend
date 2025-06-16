@@ -59,3 +59,16 @@ model WorkExperience {
   userCvId         Int
   userCv           UserCv    @relation(fields: [userCvId], references: [id])
 }
+
+model Job {
+  internalJobId   BigInt   @id @db.BigInt
+  title           String
+  companyName     String
+  location        String
+  absoluteUrl     String
+  updatedAt       DateTime
+  firstPublished  DateTime
+  requisitionId   String?
+  dataCompliance  Json
+  metadata        Json
+}
