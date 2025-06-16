@@ -1,8 +1,7 @@
-// src/auth/auth.service.ts
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma.service'; // create this
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -12,37 +11,24 @@ export class AuthService {
 
   async signup(dto: SignupDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (existing) throw new ConflictException('Email already in use');
+    if (existing) throw new UnauthorizedException('Email already in use');
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
-      data: {
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        email: dto.email,
-        password: hashedPassword,
-      },
+      data: { ...dto, password: hash },
     });
 
-    return {
-      message: 'User created',
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
-    };
+    return { message: 'User created', user: { id: user.id, email: user.email } };
   }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-      throw new ConflictException('Invalid credentials');
-    }
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const match = await bcrypt.compare(dto.password, user.password);
+    if (!match) throw new UnauthorizedException('Invalid credentials');
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
-
     return { access_token: token };
   }
 }
