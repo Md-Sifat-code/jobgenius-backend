@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-
+import { Param, Get } from '@nestjs/common';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -20,4 +20,9 @@ export class AuthController {
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
+  @Get('user/:id')
+@ApiOperation({ summary: 'Get full user details including profile and CV' })
+getUserInfo(@Param('id') id: string) {
+  return this.authService.getUserDetails(+id);
+}
 }
